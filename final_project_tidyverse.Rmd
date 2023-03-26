@@ -1,0 +1,288 @@
+---
+title: "TidyVerse Project"
+author: "waheeb Algabri"
+output:
+  pdf_document: default
+  html_document:
+    highlight: pygments
+    theme: cerulean
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(openintro)
+```
+
+
+# Introduction 
+
+In this project, my goal is to create a programming example or "vignette" that showcases the capabilities of a TidyVerse package, along with a dataset from either fivethirtyeight.com or Kaggle. The aim of this example is to demonstrate how to effectively use the selected TidyVerse package to manipulate, analyze, and visualize the selected dataset. By doing so, readers will gain a better understanding of the potential of TidyVerse packages and how they can be used to solve real-world data problems.
+
+
+## Data wrangling
+
+*The dataset I used is called "Suicide Rates Overview 1985 to 2021" and it contains information about suicide rates in various countries from 1985 to 2021.*
+
+(Suicide data)[https://www.kaggle.com/datasets/omkargowda/suicide-rates-overview-1985-to-2021]
+
+##### Load require packages 
+
+
+```{r}
+library(tidyverse)
+```
+
+##### Load the dataset
+
+```{r}
+df <- read.csv("master.csv")
+```
+
+
+
+```{r}
+glimpse(df)
+```
+
+```{r}
+knitr::kable(head(df,5))
+```
+
+
+```{r results='hide'}
+is.na(df)
+```
+
+
+Delete missing data 
+
+```{r}
+master <- na.omit(df)
+
+```
+
+
+
+```{r , echo=FALSE}
+
+library(DT)
+
+datatable(head(master),
+          options = list(pageLength = 5, scrollX = TRUE, scrollY = "300px") 
+        
+)
+
+```
+
+##### Filtering for one year
+
+By filtering data, analysts can focus on a subset of the data that is relevant to a particular research question or analysis, and exclude data that is not needed.
+
+
+
+```{r}
+# Filter the master dataset for the year 2020
+master_filtered <- master %>% 
+  filter(year == 2020)
+
+
+datatable(head(master_filtered), 
+          options = list(pageLength = 5, scrollX = TRUE, scrollY = "300px")) 
+```
+
+##### Filtering for one country and one year
+
+
+if you are searching for a particular country, you can employ the following code.
+
+```{r}
+
+# Find all unique values in the country column
+distinct_countries <- master %>% 
+  distinct(country)
+
+# View the unique countries
+head (distinct_countries,5)
+
+
+```
+
+I was looking for United States of America and the year 2020
+
+```{r}
+# Filter for United States of America in 2020
+USA <-master %>%
+filter(year == "2020", country == "United States of America")
+knitr::kable(head(USA,5))
+```
+
+
+##### selecting certain columns from the dataset using the select()
+
+```{r}
+
+master_selected <- master %>%
+  select(country, year, sex, age, population)
+
+head(master_selected, 5)
+
+```
+
+
+##### create a new variable based on existing variables using the mutate()
+
+
+```{r}
+# Create a new variable that calculates the percentage of the population in each age group
+master_mutated <- master_selected %>%
+  mutate(percent_population = population / sum(population) * 100)
+
+# View the first 5 rows of the resulting data frame
+head(master_mutated, 5)
+
+```
+
+
+group the data by certain variables using the group_by() function.
+
+```{r}
+# Group the data by country, year, and sex
+master_grouped <- master_mutated %>%
+  group_by(country, year, sex)
+
+# View the grouped data frame
+master_grouped
+
+```
+
+
+summarize the data to get summary statistics using the summarize() function.
+
+
+```{r}
+# Summarize the grouped data to get the total population for each combination of country, year, and sex
+master_summarized <- master_grouped %>%
+  summarize(total_population = sum(population))
+
+# View the resulting data frame
+head(master_summarized)
+
+```
+
+# Analysis 
+
+
+##### The top 10 Countries with the Highest Number of Suicides in 2020
+
+
+```{r}
+library(ggplot2)
+library(tidyr)
+
+# Filter for 2020 data
+suicides_2020 <- master %>% 
+  filter(year == 2020)
+
+# Group by country and calculate total number of suicides
+suicides_by_country <- suicides_2020 %>% 
+  group_by(country) %>% 
+  summarize(total_suicides = sum(suicides_no)) %>%
+  replace_na(list(total_suicides = 0))
+
+# Select top 10 countries by total number of suicides
+top_10_countries <- suicides_by_country %>%
+  top_n(10, total_suicides) %>%
+  arrange(desc(total_suicides))
+
+# Create bar plot of top 10 countries
+ggplot(top_10_countries, aes(x = country, y = total_suicides, fill = country)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Top 10 Countries with the Highest Number of Suicides in 2020")
+
+```
+
+
+###### The 10 countries with the lowest number of suicides in 2020
+
+
+```{r}
+# Select bottom 10 countries by total number of suicides
+bottom_10_countries <- suicides_by_country %>%
+  top_n(-10, total_suicides) %>%
+  arrange(total_suicides)
+
+# Create bar plot of bottom 10 countries
+ggplot(bottom_10_countries, aes(x = country, y = total_suicides, fill = country)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Bottom 10 Countries with the Lowest Number of Suicides in 2020")
+
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+# Read in the data
+master <- read.csv("master.csv")
+
+# Filter for 2020 data only
+master_filtered <- master %>% 
+  filter(year == 2020)
+
+# Create a subset of the data for the top 10 countries with the highest suicide rates in 2020
+top10 <- master_filtered %>% 
+  group_by(country) %>% 
+  summarize(suicides_per_100k = sum(suicides.100k.pop, na.rm = TRUE)) %>% 
+  arrange(desc(suicides_per_100k)) %>% 
+  top_n(10)
+
+# Create a subset of the data for Guatemala
+guatemala <- master_filtered %>% 
+  filter(country == "Guatemala")
+
+# Calculate the total number of suicides in Guatemala in 2020
+guatemala_total_suicides <- sum(guatemala$suicides_no, na.rm = TRUE)
+
+# Calculate the total population of Guatemala in 2020
+guatemala_total_population <- sum(guatemala$population, na.rm = TRUE)
+
+# Calculate the suicide rate per 100,000 people in Guatemala in 2020
+guatemala_suicide_rate <- guatemala_total_suicides / guatemala_total_population * 100000
+
+# Create a data frame with the suicide rate for Guatemala and the top 10 countries with the highest suicide rates
+comparison_data <- rbind(
+  data.frame(country = "Guatemala", suicides_per_100k = guatemala_suicide_rate),
+  top10
+)
+
+# Add a column indicating whether each country is in the top 10 or not
+comparison_data$highlight <- ifelse(comparison_data$country == "United States" | comparison_data$country %in% top10$country, "Yes", "No")
+
+# Create a bar chart showing the suicide rate for Guatemala and the top 10 countries, with highlighting for the top 10 countries
+ggplot(comparison_data, aes(x = country, y = suicides_per_100k, fill = highlight)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Comparison of Suicide Rates in Guatemala and Top 10 Countries with Highest Suicide Rates in 2020",
+       x = "Country", y = "Suicides per 100,000 people",
+       fill = "Highlight") +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+
+# conclusion 
+
+I have explored the TidyVerse package and its capabilities for manipulating, analyzing, and visualizing datasets using R programming language.
+
+By following the steps outlined in this project, some commonly used TidyVerse packages include dplyr for data manipulation, tidyr for data cleaning, ggplot2 for data visualization, readr for reading data

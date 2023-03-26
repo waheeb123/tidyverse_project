@@ -2,12 +2,12 @@
 title: "Tidyverse project"
 author: "waheeb Algabri"
 output:
-  pdf_document: default
   html_document:
     highlight: pygments
     theme: cerulean
     toc: true
     toc_float: true
+  pdf_document: default
 editor_options: 
   chunk_output_type: console
 ---
@@ -25,15 +25,11 @@ I haver to create a programming sample or "vignette" using one or more of the Ti
 
 # Goal 
 
+Examine the most common directors and actors in the top 250 movies. Which directors and actors have the most movies in the top 250? Are there any trends or patterns in the data?
+
 Explore the relationship between a movie's rating and its genre. Which genres tend to have the highest ratings, and which have the lowest? Are there any surprising results?
 
 Investigate the correlation between a movie's rating and the year of its release. Have movies been getting better over time, or have ratings remained relatively stable?
-
-Analyze the distribution of ratings across the top 250 movies. Are there any patterns in the data? Are there any outliers that stand out?
-
-Examine the most common directors and actors in the top 250 movies. Which directors and actors have the most movies in the top 250? Are there any trends or patterns in the data?
-
-Compare the ratings of movies from different countries. Are movies from certain countries more highly regarded than others?
 
 
 
@@ -42,9 +38,16 @@ Compare the ratings of movies from different countries. Are movies from certain 
 ```{r}
 library(tidyverse)
 library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+```
+
+```{r}
 # Load the dataset
 IMDB_Top_250_Movies <- read.csv("IMDB Top 250 Movies.csv")
 ```
+
 
 
 ```{r }
@@ -52,22 +55,10 @@ glimpse (IMDB_Top_250_Movies)
 ```
 
 
-###### Data Cleaning and Wrangling
+##### Data Cleaning and Wrangling
 
 Using dplyr and tidyr to clean and wrangle the data as needed, such as removing unnecessary columns, handling missing data, and converting data types.
 
-```{r}
-library(dplyr)
-library(tidyr)
-
-IMDB_Top_250_Movies <- read.csv("IMDB Top 250 Movies.csv")
-IMDB_Top_250_Movies <- select(IMDB_Top_250_Movies , genre,name, year, rating)
-
-
-```
-
-
-Handle any missing data by using the drop_na() function from the tidyr package to remove rows with missing values.
 
 ```{r}
 IMDB_Top_250_Movies <- drop_na(IMDB_Top_250_Movies)
@@ -84,11 +75,47 @@ IMDB_Top_250_Movies$year <- as.numeric(IMDB_Top_250_Movies$year)
 
 
 ```{r}
-head(IMDB_Top_250_Movies)
+head(IMDB_Top_250_Movies,3)
 ```
 
 
 # Analizing the data 
+
+
+Examine the most common directors and actors in the top 250 movies. Which directors and actors have the most movies in the top 250? Are there any trends or patterns in the data?
+
+```{r}
+# Extract the directors
+directors <- strsplit(IMDB_Top_250_Movies$directors, ", ")
+directors <- unlist(directors)
+
+```
+
+```{r}
+# Count the number of movies for each director
+director_counts <- table(directors)
+top_directors <- head(sort(director_counts, decreasing = TRUE), 10)
+top_directors
+```
+
+
+```{r}
+# Extract the actors
+writer <- strsplit(IMDB_Top_250_Movies$writers, ", ")
+writer <- unlist(writer)
+
+# Count the number of movies for each actor
+writer_counts <- table(writer)
+top_writer <- head(sort(writer_counts, decreasing = TRUE), 10)
+top_writer
+
+```
+
+
+
+
+
+
 
 Exploring the relationship between a movie's rating and its genre.
 
